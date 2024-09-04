@@ -1,0 +1,58 @@
+---
+- name: Install Kubernetes Components
+  hosts: localhost
+  become: yes
+  tasks:
+
+    - name: Install dependencies
+      apt:
+        name: ['apt-transport-https', 'ca-certificates', 'curl', 'gnupg', 'lsb-release']
+        state: present
+        update_cache: yes
+
+#    - name: Test new method to add repo.
+#      shell: "curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -"
+  
+#    - name: Test new method to add repo.
+#      shell: "echo “deb https://apt.kubernetes.io/ kubernetes-xenial main” | sudo tee -a /etc/apt/sources.list.d/kubernetes.list"    
+         
+    - name: Add Kubernetes GPG key
+      apt_key:
+        url: https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key
+        state: present
+        keyring: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+    - name: Add Kubernetes APT repository
+      apt_repository:
+        repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.28/deb/ /"
+        state: present
+
+    - name: Update apt package index
+      apt:
+        update_cache: yes
+
+#    - name: Install Kubernetes components
+#      shell: |
+#        apt install -y kubelet kubeadm kubectl
+
+#    - name: Hold Kubernetes packages at their current version
+#      shell: |
+#        apt-mark hold kubelet kubeadm kubectl
+       
+    - name: Install kubelet, kubeadm, and kubectl
+      apt:
+        name: ['kubelet', 'kubeadm', 'kubectl']
+        state: present
+        update_cache: yes
+
+#    - name: Hold Kubernetes packages at their current version
+#      apt:
+#        name: ['kubelet', 'kubeadm', 'kubectl']
+#        state: present
+#        state: hold
+#
+#    - name: Enable and start kubelet service
+#      systemd:
+#        name: kubelet
+#        enabled: yes
+#        state: started

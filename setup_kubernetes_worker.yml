@@ -1,0 +1,16 @@
+---
+- name: Setup Kubernetes Worker Nodes
+  hosts: localhost
+  become: yes
+#  vars:
+#    worker_index: "{{ inventory_hostname.split('-')[-1] }}"  # Extract index from hostname
+
+    - name: Retrieve join command
+      fetch:
+        src: /home/ubuntu/kubejoin.sh
+        dest: /home/ubuntu/kubejoin.sh
+        flat: yes
+
+    - name: Join the Kubernetes cluster
+      command: /bin/bash /home/ubuntu/kubejoin.sh
+

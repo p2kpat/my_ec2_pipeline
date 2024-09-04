@@ -1,0 +1,54 @@
+---
+ - name: Setup Kubernetes Master Node
+   hosts: localhost
+   become: yes
+   tasks:
+
+    - name: Set Hostname
+      hostname:
+        name: master-node
+
+    - name: Disable swap
+      shell: |
+        swapoff -a
+        sed -i '/ swap / s/^/#/' /etc/fstab
+
+    - name: Initialize Kubernetes master
+      command: kubeadm init --pod-network-cidr=192.168.0.0/16
+      register: kubeadm_init_output
+      changed_when: "'Your Kubernetes control-plane has initialized successfully!' in kubeadm_init_output.stdout"
+
+    - name: Create .kube directory
+      file:
+        path: /home/ubuntu/.kube
+        state: directory
+        mode: '0755'
+      become_user: ubuntu
+
+    - name: Copy Kubernetes admin config
+      command: cp /etc/kubernetes/admin.conf /home/ubuntu/.kube/config
+      become_user: ubuntu
+
+    - name: Set permissions for Kubernetes config
+      file:
+        path: /home/ubuntu/.kube/config
+        owner: ubuntu
+        group: ubuntu
+        mode: '0644'
+
+    - name: Install Calico CNI plugin
+      command: kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
+      environment:
+        KUBECONFIG: /home/ubuntu/.kube/config
+
+    - name: Generate join command for worker nodes
+      command: kubeadm token create --print-join-command
+      register: join_command
+      changed_when: false
+
+    - name: Save join command to file
+      copy:
+        content: "{{ join_command.stdout }}"
+        dest: /home/ubuntu/kubejoin.sh
+        mode: '0755'
+      become_user: ubuntu
